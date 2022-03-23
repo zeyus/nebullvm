@@ -18,6 +18,17 @@ def _get_cpu_arch():
 def _get_os():
     return platform.system()
 
+def _get_platform_shell(shell_script: str):
+    if _get_os() == "Windows":
+        return ["pwsh.exe", "-File", shell_script]
+    else:
+        return ["bash", shell_script]
+
+def _script_extension():
+    if _get_os() == "Windows":
+        return ".ps1"
+    else:
+        return ".sh"
 
 def install_tvm(working_dir: str = None):
     """Helper function for installing ApacheTVM.
@@ -32,13 +43,13 @@ def install_tvm(working_dir: str = None):
     path = Path(__file__).parent
     # install pre-requisites
     installation_file_prerequisites = str(
-        path / "install_tvm_prerequisites.sh"
+        path / "install_tvm_prerequisites{}".format(_script_extension())
     )
     subprocess.run(
-        ["bash", installation_file_prerequisites],
+        _get_platform_shell(installation_file_prerequisites),
         cwd=working_dir or Path.home(),
     )
-    installation_file = str(path / "install_tvm.sh")
+    installation_file = str(path / "install_tvm{}".format(_script_extension()))
     hardware_config = _get_cpu_arch()
     if torch.cuda.is_available():
         hardware_config = f"{hardware_config}_cuda"
@@ -49,7 +60,7 @@ def install_tvm(working_dir: str = None):
         **dict(os.environ.copy()),
     }
     subprocess.run(
-        ["bash", installation_file],
+        _get_platform_shell(installation_file),
         cwd=working_dir or Path.home(),
         env=env_dict,
     )
